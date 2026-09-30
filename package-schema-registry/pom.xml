@@ -132,9 +132,9 @@
                             <imageName>kafka-schema-registry-package</imageName>
                             <fallback>false</fallback>
                             <quickBuild>${native.image.quickBuild}</quickBuild>
-                            <configurationFileDirectories>
+                            <configFiles>
                                 <param>${native.image.metadata.directory}</param>
-                            </configurationFileDirectories>
+                            </configFiles>
                         </configuration>
                     </plugin>
                 </plugins>
