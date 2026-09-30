@@ -14,6 +14,11 @@
     <packaging>pom</packaging>
     <name>kafka-schema-registry-package</name>
 
+    <properties>
+        <native.image.metadata.directory>${project.build.directory}/native-image-config</native.image.metadata.directory>
+        <native.image.quickBuild>false</native.image.quickBuild>
+    </properties>
+
     <!-- Dependencies are required only to ensure this module is built last. -->
     <dependencies>
         <dependency>
@@ -97,6 +102,39 @@
                             <descriptors>
                                 <descriptor>src/assembly/standalone.xml</descriptor>
                             </descriptors>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <classpath>
+                                <param>${project.build.directory}/${project.build.finalName}-standalone.jar</param>
+                            </classpath>
+                            <mainClass>io.confluent.kafka.schemaregistry.rest.SchemaRegistryMain</mainClass>
+                            <imageName>kafka-schema-registry-package</imageName>
+                            <fallback>false</fallback>
+                            <quickBuild>${native.image.quickBuild}</quickBuild>
+                            <configurationFileDirectories>
+                                <param>${native.image.metadata.directory}</param>
+                            </configurationFileDirectories>
                         </configuration>
                     </plugin>
                 </plugins>

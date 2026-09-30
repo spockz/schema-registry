@@ -174,6 +174,43 @@ mvn package -P standalone [-DskipTests]
 
 This generates `package-schema-registry/target/kafka-schema-registry-package-$VERSION-standalone.jar`, which includes all the dependencies as well.
 
+### Native image
+
+Native image builds require GraalVM Native Image and its platform C toolchain. First build the standalone JAR with the reactor so it contains the matching 8.3.2 project classes:
+
+```bash
+VERSION=8.3.2
+mvn -pl package-schema-registry -am -Pstandalone clean package
+```
+
+Run the standalone JAR under the Native Image agent against representative Schema Registry workloads. Keep the server running while exercising the REST API, then stop it so the agent writes its configuration:
+
+```bash
+VERSION=8.3.2
+JAR=package-schema-registry/target/kafka-schema-registry-package-$VERSION-standalone.jar
+CONFIG="$PWD/package-schema-registry/target/native-image-config"
+rm -rf "$CONFIG"
+java -agentlib:native-image-agent=config-output-dir="$CONFIG" -jar "$JAR" config/schema-registry.properties
+```
+
+The agent configuration should cover the features and schema types used by the deployment. Compile the existing standalone JAR directly so Maven does not recreate it outside the reactor:
+
+```bash
+mvn -pl package-schema-registry -Pnative \
+  -Dnative.image.metadata.directory="$CONFIG" \
+  native:compile-no-fork
+```
+
+Alternatively, invoke Native Image directly. The standalone JAR carries the shared runtime initialization hints in `META-INF/native-image`:
+
+```bash
+native-image --no-fallback \
+  -H:ConfigurationFileDirectories="$CONFIG" \
+  -jar "$JAR" kafka-schema-registry-package
+```
+
+For a faster local iteration build, opt in with `-Dnative.image.quickBuild=true` when invoking the Maven profile.
+
 OpenAPI Spec
 ------------
 
